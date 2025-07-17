@@ -18,20 +18,45 @@ function Header() {
   const [editIndex, setEditIndex] = useState(null);
   const [editForm, setEditForm] = useState({ name: '', designation: '', email: '', phone: '', password: '' });
 
-  
+  // On mount, load employees from localStorage or fetch from backend
   useEffect(() => {
     const stored = localStorage.getItem('employees');
     if (stored) {
       setEmployees(JSON.parse(stored));
       setEmployeeCount(JSON.parse(stored).length);
+    } else {
+      // Try to fetch from backend if not in localStorage
+      axios.get('http://localhost:8000/api/employees')
+        .then(res => {
+          setEmployees(res.data);
+          setEmployeeCount(res.data.length);
+          localStorage.setItem('employees', JSON.stringify(res.data));
+        })
+        .catch(() => {});
     }
+    const pendingLeaves = JSON.parse(localStorage.getItem('pendingLeaves') || '[]');
+    setLeavePending(pendingLeaves.length);
   }, []);
 
-  
+  // Persist employees to localStorage on change
   useEffect(() => {
     localStorage.setItem('employees', JSON.stringify(employees));
     setEmployeeCount(employees.length);
   }, [employees]);
+
+  useEffect(() => {
+    const handleStorage = () => {
+      const pendingLeaves = JSON.parse(localStorage.getItem('pendingLeaves') || '[]');
+      setLeavePending(pendingLeaves.length);
+      const stored = localStorage.getItem('employees');
+      if (stored) {
+        setEmployees(JSON.parse(stored));
+        setEmployeeCount(JSON.parse(stored).length);
+      }
+    };
+    window.addEventListener('storage', handleStorage);
+    return () => window.removeEventListener('storage', handleStorage);
+  }, []);
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -45,23 +70,22 @@ function Header() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      await axios.post('http://localhost:8000/api/employees', form);
+      await axios.post('http://localhost:8000/api/employees', { ...form, phone: Number(form.phone) });
       alert('Employee created successfully!');
       setEmployees([...employees, form]);
       setShowModal(false);
       setForm({ name: '', designation: '', email: '', phone: '', password: '' });
     } catch (error) {
       alert('Failed to create employee.');
+      console.log(error);
     }
   };
 
-  
   const handleEdit = (index) => {
     setEditIndex(index);
     setEditForm(employees[index]);
   };
 
-  
   const handleSave = (index) => {
     const updated = [...employees];
     updated[index] = editForm;

@@ -1,12 +1,31 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 
 function Header() {
-  const [leaveBalance, setLeaveBalance] = useState(10); 
+  const [leaveBalance, setLeaveBalance] = useState(10);
   const [approvedCount, setApprovedCount] = useState(0);
   const [rejectedCount, setRejectCount] = useState(0);
+  const [pendingCount, setPendingCount] = useState(0);
   const [showForm, setShowForm] = useState(false);
   const [form, setForm] = useState({ reason: '', from: '', to: '' });
   const [appliedLeaves, setAppliedLeaves] = useState([]);
+  const [editIndex, setEditIndex] = useState(null);
+  const [editForm, setEditForm] = useState({ reason: '', from: '', to: '' });
+
+
+  useEffect(() => {
+    const stored = localStorage.getItem('appliedLeaves');
+    if (stored) setAppliedLeaves(JSON.parse(stored));
+    const storedEditIndex = localStorage.getItem('editIndex');
+    if (storedEditIndex !== null) setEditIndex(Number(storedEditIndex));
+    const pendingLeaves = JSON.parse(localStorage.getItem('pendingLeaves') || '[]');
+    setPendingCount(pendingLeaves.length);
+  }, []);
+
+  
+  useEffect(() => {
+    localStorage.setItem('appliedLeaves', JSON.stringify(appliedLeaves));
+    localStorage.setItem('editIndex', editIndex !== null ? editIndex : '');
+  }, [appliedLeaves, editIndex]);
 
   const handleShowForm = () => setShowForm(true);
   const handleHideForm = () => setShowForm(false);
@@ -18,10 +37,43 @@ function Header() {
 
   const handleSubmit = (e) => {
     e.preventDefault();
-  setAppliedLeaves([...appliedLeaves, form]);
-     setLeaveBalance((prev) => prev - 1);
+    const leave = { ...form, status: 'pending' };
+    setAppliedLeaves([...appliedLeaves, leave]);
+    setLeaveBalance((prev) => prev - 1);
+    const pendingLeaves = JSON.parse(localStorage.getItem('pendingLeaves') || '[]');
+    pendingLeaves.push(leave);
+    localStorage.setItem('pendingLeaves', JSON.stringify(pendingLeaves));
+    setPendingCount(pendingLeaves.length);
     setForm({ reason: '', from: '', to: '' });
     setShowForm(false);
+  };
+
+  
+  const handleEdit = (idx) => {
+    setEditIndex(idx);
+    setEditForm({
+      reason: appliedLeaves[idx].reason,
+      from: appliedLeaves[idx].from,
+      to: appliedLeaves[idx].to
+    });
+  };
+
+  
+  const handleSave = (idx) => {
+    const updatedLeaves = [...appliedLeaves];
+    updatedLeaves[idx] = { ...updatedLeaves[idx], ...editForm };
+    setAppliedLeaves(updatedLeaves);
+    setEditIndex(null);
+    setEditForm({ reason: '', from: '', to: '' });
+    
+    let pendingLeaves = JSON.parse(localStorage.getItem('pendingLeaves') || '[]');
+    pendingLeaves[idx] = { ...pendingLeaves[idx], ...editForm };
+    localStorage.setItem('pendingLeaves', JSON.stringify(pendingLeaves));
+  };
+
+  const handleEditInputChange = (e) => {
+    const { name, value } = e.target;
+    setEditForm((prev) => ({ ...prev, [name]: value }));
   };
 
   return (
@@ -30,6 +82,7 @@ function Header() {
         <h1 style={{ margin: 0, fontSize: '1.5rem' }}>Employee Dashboard</h1>
         <div style={{ display: 'flex', gap: '2rem', alignItems: 'center' }}>
           <div>Leave Balance: <strong>{leaveBalance}</strong></div>
+          <div>Pending: <strong>{pendingCount}</strong></div>
           <div>Approved: <strong>{approvedCount}</strong></div>
           <div>Rejected: <strong>{rejectedCount}</strong></div>
           <button onClick={handleShowForm} style={{ background: '#fff', color: '#388e3c', border: 'none', padding: '0.5rem 1rem', borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold' }}>Apply Leave</button>
@@ -60,14 +113,44 @@ function Header() {
                 <th style={{ padding: '0.5rem', border: '1px solid #ccc' }}>Reason</th>
                 <th style={{ padding: '0.5rem', border: '1px solid #ccc' }}>From</th>
                 <th style={{ padding: '0.5rem', border: '1px solid #ccc' }}>To</th>
+                <th style={{ padding: '0.5rem', border: '1px solid #ccc' }}>Status</th>
+                <th style={{ padding: '0.5rem', border: '1px solid #ccc' }}>Actions</th>
               </tr>
             </thead>
             <tbody>
               {appliedLeaves.map((leave, idx) => (
                 <tr key={idx}>
-                  <td style={{ padding: '0.5rem', border: '1px solid #ccc' }}>{leave.reason}</td>
-                  <td style={{ padding: '0.5rem', border: '1px solid #ccc' }}>{leave.from}</td>
-                  <td style={{ padding: '0.5rem', border: '1px solid #ccc' }}>{leave.to}</td>
+                  <td style={{ padding: '0.5rem', border: '1px solid #ccc' }}>
+                    {editIndex === idx && leave.status === 'pending' ? (
+                      <input name="reason" value={editForm.reason} onChange={handleEditInputChange} />
+                    ) : (
+                      leave.reason
+                    )}
+                  </td>
+                  <td style={{ padding: '0.5rem', border: '1px solid #ccc' }}>
+                    {editIndex === idx && leave.status === 'pending' ? (
+                      <input name="from" type="date" value={editForm.from} onChange={handleEditInputChange} />
+                    ) : (
+                      leave.from
+                    )}
+                  </td>
+                  <td style={{ padding: '0.5rem', border: '1px solid #ccc' }}>
+                    {editIndex === idx && leave.status === 'pending' ? (
+                      <input name="to" type="date" value={editForm.to} onChange={handleEditInputChange} />
+                    ) : (
+                      leave.to
+                    )}
+                  </td>
+                  <td style={{ padding: '0.5rem', border: '1px solid #ccc' }}>{leave.status}</td>
+                  <td style={{ padding: '0.5rem', border: '1px solid #ccc' }}>
+                    {leave.status === 'pending' && (
+                      editIndex === idx ? (
+                        <button onClick={() => handleSave(idx)} style={{ marginRight: '0.5rem' }}>Save</button>
+                      ) : (
+                        <button onClick={() => handleEdit(idx)} style={{ marginRight: '0.5rem' }}>Edit</button>
+                      )
+                    )}
+                  </td>
                 </tr>
               ))}
             </tbody>

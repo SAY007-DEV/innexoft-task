@@ -2,6 +2,7 @@ import express from 'express';
 import cors from 'cors';
 import connectDB from './Database/Connect.js';
 import Emp from './Database/UserSchema.js';
+import router from './Routes/userRoute.js';
 
 const app = express();
 const PORT =  8000;
@@ -24,4 +25,4 @@ connectDB();
 
 // route 
 
-// app.use('/api',) 
+app.use('/api',router) 
