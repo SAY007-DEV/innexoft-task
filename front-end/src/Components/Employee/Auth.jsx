@@ -1,45 +1,63 @@
-import React, { useState } from 'react'
-import axios from 'axios'
+import React, { useState } from 'react';
 
 function Auth() {
   const [form, setForm] = useState({ email: '', password: '' });
   const [error, setError] = useState('');
-  const [success, setSuccess] = useState(false);
+  const [loading, setLoading] = useState(false);
 
-  const handleInputChange = (e) => {
-    const { name, value } = e.target;
-    setForm((prev) => ({ ...prev, [name]: value }));
+  const handleChange = (e) => {
+    setForm({ ...form, [e.target.name]: e.target.value });
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setLoading(true);
     setError('');
-    setSuccess(false);
     try {
-      const res = await axios.get('http://localhost:8000/api/employees');
-      const found = res.data.find(emp => emp.email === form.email && emp.password === form.password);
-      if (found) {
-        setSuccess(true);
-      } else {
-        setError('Invalid email or password');
-      }
+      const res = await fetch('http://localhost:5000/api/user/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(form),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.message || 'Login failed');
+      localStorage.setItem('employeeUser', JSON.stringify(data.user));
+      window.location = '/employee';
     } catch (err) {
-      setError('Error connecting to server');
+      setError(err.message);
     }
+    setLoading(false);
   };
 
   return (
-    <div style={{ maxWidth: 400, margin: '4rem auto', padding: '2rem', border: '1px solid #ccc', borderRadius: 8, background: '#fff' }}>
+    <div style={{ maxWidth: 400, margin: '2rem auto', padding: 24, border: '1px solid #ccc', borderRadius: 8 }}>
       <h2>Employee Login</h2>
-      <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-        <input name="email" type="email" placeholder="Email" value={form.email} onChange={handleInputChange} required style={{ padding: '0.5rem', borderRadius: 4, border: '1px solid #ccc' }} />
-        <input name="password" type="password" placeholder="Password" value={form.password} onChange={handleInputChange} required style={{ padding: '0.5rem', borderRadius: 4, border: '1px solid #ccc' }} />
-        <button type="submit" style={{ background: '#388e3c', color: '#fff', border: 'none', padding: '0.5rem 1rem', borderRadius: 4, cursor: 'pointer', fontWeight: 'bold' }}>Login</button>
+      <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+        <input
+          name="email"
+          type="email"
+          placeholder="Email"
+          value={form.email}
+          onChange={handleChange}
+          required
+          style={{ padding: 8, borderRadius: 4, border: '1px solid #ccc' }}
+        />
+        <input
+          name="password"
+          type="password"
+          placeholder="Password"
+          value={form.password}
+          onChange={handleChange}
+          required
+          style={{ padding: 8, borderRadius: 4, border: '1px solid #ccc' }}
+        />
+        <button type="submit" disabled={loading} style={{ padding: 10, background: '#388e3c', color: '#fff', border: 'none', borderRadius: 4 }}>
+          {loading ? 'Logging in...' : 'Login'}
+        </button>
+        {error && <div style={{ color: 'red' }}>{error}</div>}
       </form>
-      {error && <div style={{ color: 'red', marginTop: '1rem' }}>{error}</div>}
-      {success && <div style={{ color: 'green', marginTop: '1rem' }}>Login successful!</div>}
     </div>
   );
 }
 
-export default Auth
+export default Auth;

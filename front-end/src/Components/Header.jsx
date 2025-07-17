@@ -18,41 +18,27 @@ function Header() {
   const [editIndex, setEditIndex] = useState(null);
   const [editForm, setEditForm] = useState({ name: '', designation: '', email: '', phone: '', password: '' });
 
-  // On mount, load employees from localStorage or fetch from backend
   useEffect(() => {
     const stored = localStorage.getItem('employees');
     if (stored) {
       setEmployees(JSON.parse(stored));
       setEmployeeCount(JSON.parse(stored).length);
-    } else {
-      // Try to fetch from backend if not in localStorage
-      axios.get('http://localhost:8000/api/employees')
-        .then(res => {
-          setEmployees(res.data);
-          setEmployeeCount(res.data.length);
-          localStorage.setItem('employees', JSON.stringify(res.data));
-        })
-        .catch(() => {});
     }
+    
     const pendingLeaves = JSON.parse(localStorage.getItem('pendingLeaves') || '[]');
     setLeavePending(pendingLeaves.length);
   }, []);
 
-  // Persist employees to localStorage on change
   useEffect(() => {
     localStorage.setItem('employees', JSON.stringify(employees));
     setEmployeeCount(employees.length);
   }, [employees]);
 
+  
   useEffect(() => {
     const handleStorage = () => {
       const pendingLeaves = JSON.parse(localStorage.getItem('pendingLeaves') || '[]');
       setLeavePending(pendingLeaves.length);
-      const stored = localStorage.getItem('employees');
-      if (stored) {
-        setEmployees(JSON.parse(stored));
-        setEmployeeCount(JSON.parse(stored).length);
-      }
     };
     window.addEventListener('storage', handleStorage);
     return () => window.removeEventListener('storage', handleStorage);
@@ -66,11 +52,11 @@ function Header() {
   const handleOpenModal = () => setShowModal(true);
   const handleCloseModal = () => setShowModal(false);
 
-  //   data passing 
+  
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      await axios.post('http://localhost:8000/api/employees', { ...form, phone: Number(form.phone) });
+      await axios.post('http://localhost:8000/api/employees', form);
       alert('Employee created successfully!');
       setEmployees([...employees, form]);
       setShowModal(false);
@@ -78,6 +64,7 @@ function Header() {
     } catch (error) {
       alert('Failed to create employee.');
       console.log(error);
+      
     }
   };
 
@@ -117,7 +104,7 @@ function Header() {
               <input name="name" placeholder="Name" value={form.name} onChange={handleInputChange} required style={{ padding: '0.5rem', borderRadius: '4px', border: '1px solid #ccc' }} />
               <input name="designation" placeholder="Designation" value={form.designation} onChange={handleInputChange} required style={{ padding: '0.5rem', borderRadius: '4px', border: '1px solid #ccc' }} />
               <input name="email" type="email" placeholder="Email" value={form.email} onChange={handleInputChange} required style={{ padding: '0.5rem', borderRadius: '4px', border: '1px solid #ccc' }} />
-              <input name="phone" placeholder="Phone Number" value={form.phone} onChange={handleInputChange} required style={{ padding: '0.5rem', borderRadius: '4px', border: '1px solid #ccc' }} />
+              <input name="phone" type='number' placeholder="Phone Number" value={form.phone} onChange={handleInputChange} required style={{ padding: '0.5rem', borderRadius: '4px', border: '1px solid #ccc' }} />
               <input name="password" type="password" placeholder="Password" value={form.password} onChange={handleInputChange} required style={{ padding: '0.5rem', borderRadius: '4px', border: '1px solid #ccc' }} />
               <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '1rem' }}>
                 <button type="button" onClick={handleCloseModal} style={{ background: '#eee', color: '#1976d2', border: 'none', padding: '0.5rem 1rem', borderRadius: '4px', cursor: 'pointer' }}>Cancel</button>
