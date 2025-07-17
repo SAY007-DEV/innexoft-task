@@ -1,6 +1,5 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import axios from 'axios'
-import useEmployeeStore from './employeeStore'
 
 function Header() {
   const [employeeCount, setEmployeeCount] = useState(0);
@@ -15,10 +14,24 @@ function Header() {
     phone: '',
     password: ''
   });
-
-  const { employees, addEmployee, updateEmployee } = useEmployeeStore();
+  const [employees, setEmployees] = useState([]);
   const [editIndex, setEditIndex] = useState(null);
-  const [editForm, setEditForm] = useState({});
+  const [editForm, setEditForm] = useState({ name: '', designation: '', email: '', phone: '', password: '' });
+
+  
+  useEffect(() => {
+    const stored = localStorage.getItem('employees');
+    if (stored) {
+      setEmployees(JSON.parse(stored));
+      setEmployeeCount(JSON.parse(stored).length);
+    }
+  }, []);
+
+  
+  useEffect(() => {
+    localStorage.setItem('employees', JSON.stringify(employees));
+    setEmployeeCount(employees.length);
+  }, [employees]);
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -32,9 +45,9 @@ function Header() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      await axios.post('/api/employees', form);
-      addEmployee(form);
+      await axios.post('http://localhost:8000/api/employees', form);
       alert('Employee created successfully!');
+      setEmployees([...employees, form]);
       setShowModal(false);
       setForm({ name: '', designation: '', email: '', phone: '', password: '' });
     } catch (error) {
@@ -42,19 +55,24 @@ function Header() {
     }
   };
 
+  
   const handleEdit = (index) => {
     setEditIndex(index);
     setEditForm(employees[index]);
   };
 
-  const handleEditChange = (e) => {
-    const { name, value } = e.target;
-    setEditForm((prev) => ({ ...prev, [name]: value }));
+  
+  const handleSave = (index) => {
+    const updated = [...employees];
+    updated[index] = editForm;
+    setEmployees(updated);
+    setEditIndex(null);
+    setEditForm({ name: '', designation: '', email: '', phone: '', password: '' });
   };
 
-  const handleSave = (index) => {
-    updateEmployee(index, editForm);
-    setEditIndex(null);
+  const handleEditInputChange = (e) => {
+    const { name, value } = e.target;
+    setEditForm((prev) => ({ ...prev, [name]: value }));
   };
 
   return (
@@ -62,7 +80,7 @@ function Header() {
       <header style={{ background: '#1976d2', color: 'white', padding: '1rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <h1 style={{ margin: 0, fontSize: '1.5rem' }}>HR Dashboard</h1>
         <div style={{ display: 'flex', gap: '2rem', alignItems: 'center' }}>
-          <div>Employees: <strong>{employeeCount + employees.length}</strong></div>
+          <div>Employees: <strong>{employeeCount}</strong></div>
           <div>Pending Leaves: <strong>{leavePending}</strong></div>
           <div>Rejected Leaves: <strong>{leaveRejected}</strong></div>
           <div>Approved Leaves: <strong>{leaveApproved}</strong></div>
@@ -85,66 +103,58 @@ function Header() {
           </div>
         )}
       </header>
-      <div style={{ maxWidth: '800px', margin: '2rem auto', background: '#f9f9f9', borderRadius: '8px', padding: '2rem', boxShadow: '0 2px 8px rgba(0,0,0,0.05)' }}>
+      <div style={{ maxWidth: '800px', margin: '2rem auto', background: '#f9f9f9', borderRadius: '8px', padding: '1rem' }}>
         <h2>Employee List</h2>
         <table style={{ width: '100%', borderCollapse: 'collapse' }}>
           <thead>
             <tr style={{ background: '#1976d2', color: 'white' }}>
-              <th style={{ padding: '0.5rem', border: '1px solid #ddd' }}>Name</th>
-              <th style={{ padding: '0.5rem', border: '1px solid #ddd' }}>Designation</th>
-              <th style={{ padding: '0.5rem', border: '1px solid #ddd' }}>Email</th>
-              <th style={{ padding: '0.5rem', border: '1px solid #ddd' }}>Phone</th>
-              <th style={{ padding: '0.5rem', border: '1px solid #ddd' }}>Actions</th>
+              <th style={{ padding: '0.5rem', border: '1px solid #ccc' }}>Name</th>
+              <th style={{ padding: '0.5rem', border: '1px solid #ccc' }}>Designation</th>
+              <th style={{ padding: '0.5rem', border: '1px solid #ccc' }}>Email</th>
+              <th style={{ padding: '0.5rem', border: '1px solid #ccc' }}>Phone</th>
+              <th style={{ padding: '0.5rem', border: '1px solid #ccc' }}>Actions</th>
             </tr>
           </thead>
           <tbody>
             {employees.map((emp, idx) => (
               <tr key={idx}>
-                <td style={{ padding: '0.5rem', border: '1px solid #ddd' }}>
+                <td style={{ padding: '0.5rem', border: '1px solid #ccc' }}>
                   {editIndex === idx ? (
-                    <input name="name" value={editForm.name} onChange={handleEditChange} style={{ padding: '0.25rem', borderRadius: '4px', border: '1px solid #ccc' }} />
+                    <input name="name" value={editForm.name} onChange={handleEditInputChange} />
                   ) : (
                     emp.name
                   )}
                 </td>
-                <td style={{ padding: '0.5rem', border: '1px solid #ddd' }}>
+                <td style={{ padding: '0.5rem', border: '1px solid #ccc' }}>
                   {editIndex === idx ? (
-                    <input name="designation" value={editForm.designation} onChange={handleEditChange} style={{ padding: '0.25rem', borderRadius: '4px', border: '1px solid #ccc' }} />
+                    <input name="designation" value={editForm.designation} onChange={handleEditInputChange} />
                   ) : (
                     emp.designation
                   )}
                 </td>
-                <td style={{ padding: '0.5rem', border: '1px solid #ddd' }}>
+                <td style={{ padding: '0.5rem', border: '1px solid #ccc' }}>
                   {editIndex === idx ? (
-                    <input name="email" value={editForm.email} onChange={handleEditChange} style={{ padding: '0.25rem', borderRadius: '4px', border: '1px solid #ccc' }} />
+                    <input name="email" value={editForm.email} onChange={handleEditInputChange} />
                   ) : (
                     emp.email
                   )}
                 </td>
-                <td style={{ padding: '0.5rem', border: '1px solid #ddd' }}>
+                <td style={{ padding: '0.5rem', border: '1px solid #ccc' }}>
                   {editIndex === idx ? (
-                    <input name="phone" value={editForm.phone} onChange={handleEditChange} style={{ padding: '0.25rem', borderRadius: '4px', border: '1px solid #ccc' }} />
+                    <input name="phone" value={editForm.phone} onChange={handleEditInputChange} />
                   ) : (
                     emp.phone
                   )}
                 </td>
-                <td style={{ padding: '0.5rem', border: '1px solid #ddd' }}>
+                <td style={{ padding: '0.5rem', border: '1px solid #ccc' }}>
                   {editIndex === idx ? (
-                    <>
-                      <button onClick={() => handleSave(idx)} style={{ background: '#388e3c', color: 'white', border: 'none', padding: '0.25rem 0.75rem', borderRadius: '4px', marginRight: '0.5rem', cursor: 'pointer' }}>Save</button>
-                      <button onClick={() => setEditIndex(null)} style={{ background: '#eee', color: '#1976d2', border: 'none', padding: '0.25rem 0.75rem', borderRadius: '4px', cursor: 'pointer' }}>Cancel</button>
-                    </>
+                    <button onClick={() => handleSave(idx)} style={{ marginRight: '0.5rem' }}>Save</button>
                   ) : (
-                    <button onClick={() => handleEdit(idx)} style={{ background: '#1976d2', color: 'white', border: 'none', padding: '0.25rem 0.75rem', borderRadius: '4px', cursor: 'pointer' }}>Edit</button>
+                    <button onClick={() => handleEdit(idx)} style={{ marginRight: '0.5rem' }}>Edit</button>
                   )}
                 </td>
               </tr>
             ))}
-            {employees.length === 0 && (
-              <tr>
-                <td colSpan={5} style={{ textAlign: 'center', padding: '1rem', color: '#888' }}>No employees found.</td>
-              </tr>
-            )}
           </tbody>
         </table>
       </div>
