@@ -1,31 +1,30 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState } from 'react'
+import useStore from '../store'
 
 function Header() {
-  const [leaveBalance, setLeaveBalance] = useState(10);
-  const [approvedCount, setApprovedCount] = useState(0);
-  const [rejectedCount, setRejectCount] = useState(0);
-  const [pendingCount, setPendingCount] = useState(0);
   const [showForm, setShowForm] = useState(false);
   const [form, setForm] = useState({ reason: '', from: '', to: '', leaveType: '' });
-  const [appliedLeaves, setAppliedLeaves] = useState([]);
-  const [editId, setEditId] = useState(null);
   const [editForm, setEditForm] = useState({ reason: '', from: '', to: '', leaveType: '' });
 
+  const {
+    leaveBalance,
+    appliedLeaves,
+    pendingLeaves,
+    approvedLeaves,
+    rejectedLeaves,
+    editId,
+    addAppliedLeave,
+    editAppliedLeave,
+    setEditId,
+    clearEditId,
+    deleteLeave,
+  } = useStore();
+
+  const approvedCount = approvedLeaves.length;
+  const rejectedCount = rejectedLeaves.length;
+  const pendingCount = pendingLeaves.length;
+
   const generateId = () => '_' + Math.random().toString(36).substr(2, 9);
-
-  useEffect(() => {
-    const stored = localStorage.getItem('appliedLeaves');
-    if (stored) setAppliedLeaves(JSON.parse(stored));
-    const storedEditId = localStorage.getItem('editId');
-    if (storedEditId !== null && storedEditId !== '') setEditId(storedEditId);
-    const pendingLeaves = JSON.parse(localStorage.getItem('pendingLeaves') || '[]');
-    setPendingCount(pendingLeaves.length);
-  }, []);
-
-  useEffect(() => {
-    localStorage.setItem('appliedLeaves', JSON.stringify(appliedLeaves));
-    localStorage.setItem('editId', editId !== null ? editId : '');
-  }, [appliedLeaves, editId]);
 
   const handleShowForm = () => setShowForm(true);
   const handleHideForm = () => setShowForm(false);
@@ -37,32 +36,22 @@ function Header() {
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    const leave = { ...form, status: 'pending', id: generateId() };
-    setAppliedLeaves([...appliedLeaves, leave]);
-    const pendingLeaves = JSON.parse(localStorage.getItem('pendingLeaves') || '[]');
-    pendingLeaves.push(leave);
-    localStorage.setItem('pendingLeaves', JSON.stringify(pendingLeaves));
-    setPendingCount(pendingLeaves.length);
+    // Replace with actual employee info (from auth or props)
+    const employeeName = "John Doe"; // Replace with real data
+    const employeeEmail = "john@example.com"; // Replace with real data
+
+    const leave = {
+      ...form,
+      status: 'pending',
+      id: generateId(),
+      employeeName,
+      employeeEmail
+    };
+    addAppliedLeave(leave);
     setForm({ reason: '', from: '', to: '', leaveType: '' });
     setShowForm(false);
   };
 
-  // Approve leave (for demo/HR)
-  const handleApprove = (id) => {
-    const updatedLeaves = appliedLeaves.map((leave) =>
-      leave.id === id ? { ...leave, status: 'approved' } : leave
-    );
-    setAppliedLeaves(updatedLeaves);
-    setLeaveBalance((prev) => prev - 1);
-    localStorage.setItem('appliedLeaves', JSON.stringify(updatedLeaves));
-    // Remove from pendingLeaves in localStorage
-    let pendingLeaves = JSON.parse(localStorage.getItem('pendingLeaves') || '[]');
-    pendingLeaves = pendingLeaves.filter((leave) => leave.id !== id);
-    localStorage.setItem('pendingLeaves', JSON.stringify(pendingLeaves));
-    setPendingCount(pendingLeaves.length);
-  };
-
-  
   const handleEdit = (id) => {
     setEditId(id);
     const leave = appliedLeaves.find((l) => l.id === id);
@@ -76,18 +65,9 @@ function Header() {
 
   // Save edited leave
   const handleSave = (id) => {
-    const updatedLeaves = appliedLeaves.map((leave) =>
-      leave.id === id ? { ...leave, ...editForm } : leave
-    );
-    setAppliedLeaves(updatedLeaves);
-    setEditId(null);
+    editAppliedLeave(id, editForm);
+    clearEditId();
     setEditForm({ reason: '', from: '', to: '', leaveType: '' });
-    // Also update pendingLeaves in localStorage
-    let pendingLeaves = JSON.parse(localStorage.getItem('pendingLeaves') || '[]');
-    pendingLeaves = pendingLeaves.map((leave) =>
-      leave.id === id ? { ...leave, ...editForm } : leave
-    );
-    localStorage.setItem('pendingLeaves', JSON.stringify(pendingLeaves));
   };
 
   const handleEditInputChange = (e) => {
@@ -199,7 +179,9 @@ function Header() {
                       leave.to
                     )}
                   </td>
-                  <td style={{ padding: '0.5rem', border: '1px solid #ccc' }}>{leave.status}</td>
+                  <td style={{ padding: '0.5rem', border: '1px solid #ccc', fontWeight: 'bold', color: leave.status === 'approved' ? 'green' : leave.status === 'rejected' ? 'red' : '#888' }}>
+                    {leave.status.charAt(0).toUpperCase() + leave.status.slice(1)}
+                  </td>
                   <td style={{ padding: '0.5rem', border: '1px solid #ccc' }}>
                     {leave.status === 'pending' && (
                       editId === leave.id ? (
@@ -207,10 +189,10 @@ function Header() {
                       ) : (
                         <>
                           <button onClick={() => handleEdit(leave.id)} style={{ marginRight: '0.5rem' }}>Edit</button>
-                          <button onClick={() => handleApprove(leave.id)} style={{ marginRight: '0.5rem', background: '#388e3c', color: '#fff' }}>Approve</button>
                         </>
                       )
                     )}
+                    <button onClick={() => deleteLeave(leave.id)} style={{ background: '#f44336', color: '#fff', border: 'none', padding: '0.3rem 0.7rem', borderRadius: '4px', cursor: 'pointer', marginLeft: '0.5rem' }}>Delete</button>
                   </td>
                 </tr>
               ))}

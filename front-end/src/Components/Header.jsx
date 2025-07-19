@@ -1,12 +1,10 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState } from 'react'
 import axios from 'axios'
+import useStore from '../Components/store'
 
 function Header() {
-  const [employeeCount, setEmployeeCount] = useState(0);
-  const [leavePending, setLeavePending] = useState(0);
-  const [leaveRejected, setLeaveRejected] = useState(0);
-  const [leaveApproved, setLeaveApproved] = useState(0);
   const [showModal, setShowModal] = useState(false);
+  const [showLeavesModal, setShowLeavesModal] = useState(false);
   const [form, setForm] = useState({
     name: '',
     designation: '',
@@ -14,35 +12,27 @@ function Header() {
     phone: '',
     password: ''
   });
-  const [employees, setEmployees] = useState([]);
   const [editIndex, setEditIndex] = useState(null);
   const [editForm, setEditForm] = useState({ name: '', designation: '', email: '', phone: '', password: '' });
 
-  useEffect(() => {
-    const stored = localStorage.getItem('employees');
-    if (stored) {
-      setEmployees(JSON.parse(stored));
-      setEmployeeCount(JSON.parse(stored).length);
-    }
-    
-    const pendingLeaves = JSON.parse(localStorage.getItem('pendingLeaves') || '[]');
-    setLeavePending(pendingLeaves.length);
-  }, []);
+  // Zustand state
+  const {
+    employees,
+    pendingLeaves,
+    approvedLeaves,
+    rejectedLeaves,
+    addEmployee,
+    approveLeave,
+    rejectLeave,
+    // addPendingLeave, // For demo/testing
+    // ...other actions
+  } = useStore();
 
-  useEffect(() => {
-    localStorage.setItem('employees', JSON.stringify(employees));
-    setEmployeeCount(employees.length);
-  }, [employees]);
-
-  
-  useEffect(() => {
-    const handleStorage = () => {
-      const pendingLeaves = JSON.parse(localStorage.getItem('pendingLeaves') || '[]');
-      setLeavePending(pendingLeaves.length);
-    };
-    window.addEventListener('storage', handleStorage);
-    return () => window.removeEventListener('storage', handleStorage);
-  }, []);
+  // Derived counts
+  const employeeCount = employees.length;
+  const leavePending = pendingLeaves.length;
+  const leaveApproved = approvedLeaves.length;
+  const leaveRejected = rejectedLeaves.length;
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -51,20 +41,20 @@ function Header() {
 
   const handleOpenModal = () => setShowModal(true);
   const handleCloseModal = () => setShowModal(false);
+  const handleOpenLeavesModal = () => setShowLeavesModal(true);
+  const handleCloseLeavesModal = () => setShowLeavesModal(false);
 
-  
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
       await axios.post('http://localhost:8000/api/employees', form);
       alert('Employee created successfully!');
-      setEmployees([...employees, form]);
+      addEmployee(form);
       setShowModal(false);
       setForm({ name: '', designation: '', email: '', phone: '', password: '' });
     } catch (error) {
       alert('Failed to create employee.');
       console.log(error);
-      
     }
   };
 
@@ -74,9 +64,8 @@ function Header() {
   };
 
   const handleSave = (index) => {
-    const updated = [...employees];
-    updated[index] = editForm;
-    setEmployees(updated);
+    // For simplicity, keep local edit (not in store)
+    // You can add an updateEmployee action in store if needed
     setEditIndex(null);
     setEditForm({ name: '', designation: '', email: '', phone: '', password: '' });
   };
@@ -92,7 +81,9 @@ function Header() {
         <h1 style={{ margin: 0, fontSize: '1.5rem' }}>HR Dashboard</h1>
         <div style={{ display: 'flex', gap: '2rem', alignItems: 'center' }}>
           <div>Employees: <strong>{employeeCount}</strong></div>
-          <div>Pending Leaves: <strong>{leavePending}</strong></div>
+          <button onClick={handleOpenLeavesModal} style={{ background: '#fff', color: '#1976d2', border: 'none', padding: '0.5rem 1rem', borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold' }}>
+            Pending Leaves: <strong>{leavePending}</strong>
+          </button>
           <div>Rejected Leaves: <strong>{leaveRejected}</strong></div>
           <div>Approved Leaves: <strong>{leaveApproved}</strong></div>
           <button onClick={handleOpenModal} style={{ background: '#fff', color: '#1976d2', border: 'none', padding: '0.5rem 1rem', borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold' }}>Add Employee</button>
@@ -111,6 +102,41 @@ function Header() {
                 <button type="submit" style={{ background: '#1976d2', color: '#fff', border: 'none', padding: '0.5rem 1rem', borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold' }}>Create</button>
               </div>
             </form>
+          </div>
+        )}
+        {showLeavesModal && (
+          <div style={{ position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh', background: 'rgba(0,0,0,0.3)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}>
+            <div style={{ background: 'white', color: '#222', padding: '2rem', borderRadius: '8px', minWidth: '400px', boxShadow: '0 2px 8px rgba(0,0,0,0.2)', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+              <h2 style={{ margin: 0, color: '#1976d2' }}>Pending Leave Applications</h2>
+              {pendingLeaves.length === 0 ? (
+                <div>No pending leave applications.</div>
+              ) : (
+                <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                  <thead>
+                    <tr style={{ background: '#1976d2', color: 'white' }}>
+                      <th style={{ padding: '0.5rem', border: '1px solid #ccc' }}>Employee</th>
+                      <th style={{ padding: '0.5rem', border: '1px solid #ccc' }}>Reason</th>
+                      <th style={{ padding: '0.5rem', border: '1px solid #ccc' }}>Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {pendingLeaves.map((leave) => (
+                      <tr key={leave.id}>
+                        <td style={{ padding: '0.5rem', border: '1px solid #ccc' }}>{leave.employeeName || leave.name || leave.email}</td>
+                        <td style={{ padding: '0.5rem', border: '1px solid #ccc' }}>{leave.reason || '-'}</td>
+                        <td style={{ padding: '0.5rem', border: '1px solid #ccc' }}>
+                          <button onClick={() => approveLeave(leave.id)} style={{ marginRight: '0.5rem', background: '#4caf50', color: '#fff', border: 'none', padding: '0.3rem 0.7rem', borderRadius: '4px', cursor: 'pointer' }}>Approve</button>
+                          <button onClick={() => rejectLeave(leave.id)} style={{ background: '#f44336', color: '#fff', border: 'none', padding: '0.3rem 0.7rem', borderRadius: '4px', cursor: 'pointer' }}>Reject</button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              )}
+              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '1rem' }}>
+                <button onClick={handleCloseLeavesModal} style={{ background: '#eee', color: '#1976d2', border: 'none', padding: '0.5rem 1rem', borderRadius: '4px', cursor: 'pointer' }}>Close</button>
+              </div>
+            </div>
           </div>
         )}
       </header>

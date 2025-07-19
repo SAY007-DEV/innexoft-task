@@ -1,9 +1,11 @@
 import React, { useState } from 'react';
+import useStore from '../store';
 
 function Auth() {
   const [form, setForm] = useState({ email: '', password: '' });
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const { setCurrentUser } = useStore();
 
   const handleChange = (e) => {
     setForm({ ...form, [e.target.name]: e.target.value });
@@ -14,14 +16,14 @@ function Auth() {
     setLoading(true);
     setError('');
     try {
-      const res = await fetch('http://localhost:5000/api/user/login', {
+      const res = await fetch('http://localhost:8000/api/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(form),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.message || 'Login failed');
-      localStorage.setItem('employeeUser', JSON.stringify(data.user));
+      setCurrentUser(data.user);
       window.location = '/employee';
     } catch (err) {
       setError(err.message);
