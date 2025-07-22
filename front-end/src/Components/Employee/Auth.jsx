@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import useStore from '../store';
+import { Navigate } from 'react-router-dom';
 
 function Auth() {
   const [form, setForm] = useState({ email: '', password: '' });
@@ -25,6 +26,7 @@ function Auth() {
       if (!res.ok) throw new Error(data.message || 'Login failed');
       setCurrentUser(data.user);
       window.location = '/employee';
+      // Navigate('/employee')
     } catch (err) {
       setError(err.message);
     }
