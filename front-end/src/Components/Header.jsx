@@ -14,6 +14,7 @@ function Header() {
   });
   const [editIndex, setEditIndex] = useState(null);
   const [editForm, setEditForm] = useState({ name: '', designation: '', email: '', phone: '', password: '' });
+  const [loading, setLoading] = useState(false); // <-- add loading state
 
   // Zustand state
   const {
@@ -46,6 +47,7 @@ function Header() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setLoading(true); // <-- set loading true
     try {
       await axios.post('https://innexoft-task.onrender.com/api/employees', form);
       alert('Employee created successfully!');
@@ -56,6 +58,7 @@ function Header() {
       alert('Failed to create employee.');
       console.log(error);
     }
+    setLoading(false); // <-- set loading false
   };
 
   const handleEdit = (index) => {
@@ -100,6 +103,20 @@ function Header() {
                 <button type="button" onClick={handleCloseModal} style={{ background: '#eee', color: '#1976d2', border: 'none', padding: '0.5rem 1rem', borderRadius: '4px', cursor: 'pointer' }}>Cancel</button>
                 <button type="submit" style={{ background: '#1976d2', color: '#fff', border: 'none', padding: '0.5rem 1rem', borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold' }}>Create</button>
               </div>
+              {loading && (
+                <div style={{
+                  background: '#fffbe6',
+                  color: '#856404',
+                  border: '1px solid #ffe58f',
+                  borderRadius: 8,
+                  marginTop: 20,
+                  padding: '1rem',
+                  textAlign: 'center',
+                }}>
+                  <h3 style={{margin: 0, color: '#1976d2'}}>Server is slow</h3>
+                  <p style={{margin: '0.5rem 0 0 0'}}>Please be patient and wait for up to 15 seconds while we create the employee.</p>
+                </div>
+              )}
             </form>
           </div>
         )}

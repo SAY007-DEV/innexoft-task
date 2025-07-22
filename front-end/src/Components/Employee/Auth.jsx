@@ -1,12 +1,13 @@
 import React, { useState } from 'react';
 import useStore from '../store';
-import { Navigate } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 
 function Auth() {
   const [form, setForm] = useState({ email: '', password: '' });
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const { setCurrentUser } = useStore();
+  const navigate = useNavigate();
 
   const handleChange = (e) => {
     setForm({ ...form, [e.target.name]: e.target.value });
@@ -25,12 +26,12 @@ function Auth() {
       const data = await res.json();
       if (!res.ok) throw new Error(data.message || 'Login failed');
       setCurrentUser(data.user);
-      window.location = '/employee';
-      // Navigate('/employee')
+      navigate('/employee');
     } catch (err) {
-      setError(err.message);
+      setError(err.message || 'An error occurred during login.');
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
   };
 
   return (
@@ -60,6 +61,20 @@ function Auth() {
         </button>
         {error && <div style={{ color: 'red' }}>{error}</div>}
       </form>
+      {loading && (
+        <div style={{
+          background: '#fffbe6',
+          color: '#856404',
+          border: '1px solid #ffe58f',
+          borderRadius: 8,
+          marginTop: 20,
+          padding: '1rem',
+          textAlign: 'center',
+        }}>
+          <h3 style={{margin: 0, color: '#388e3c'}}>Server is slow</h3>
+          <p style={{margin: '0.5rem 0 0 0'}}>Please be patient and wait for up to 15 seconds while we log you in.</p>
+        </div>
+      )}
     </div>
   );
 }
