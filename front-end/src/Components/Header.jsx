@@ -47,7 +47,7 @@ function Header() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      await axios.post('http://localhost:8000/api/employees', form);
+      await axios.post('https://innexoft-task-server.vercel.app/api/employees', form);
       alert('Employee created successfully!');
       addEmployee(form);
       setShowModal(false);
@@ -64,8 +64,7 @@ function Header() {
   };
 
   const handleSave = (index) => {
-    // For simplicity, keep local edit (not in store)
-    // You can add an updateEmployee action in store if needed
+ 
     setEditIndex(null);
     setEditForm({ name: '', designation: '', email: '', phone: '', password: '' });
   };
@@ -122,7 +121,15 @@ function Header() {
                   <tbody>
                     {pendingLeaves.map((leave) => (
                       <tr key={leave.id}>
-                        <td style={{ padding: '0.5rem', border: '1px solid #ccc' }}>{leave.employeeName || leave.name || leave.email}</td>
+                        <td style={{ padding: '0.5rem', border: '1px solid #ccc' }}>
+                          {
+                            (() => {
+                              // Try to find the employee by email (or use employeeId if you have it)
+                              const emp = employees.find(e => e.email === leave.email /* or e.id === leave.employeeId */);
+                              return emp ? emp.name : (leave.employeeName || leave.name || leave.email);
+                            })()
+                          }
+                        </td>
                         <td style={{ padding: '0.5rem', border: '1px solid #ccc' }}>{leave.reason || '-'}</td>
                         <td style={{ padding: '0.5rem', border: '1px solid #ccc' }}>
                           <button onClick={() => approveLeave(leave.id)} style={{ marginRight: '0.5rem', background: '#4caf50', color: '#fff', border: 'none', padding: '0.3rem 0.7rem', borderRadius: '4px', cursor: 'pointer' }}>Approve</button>

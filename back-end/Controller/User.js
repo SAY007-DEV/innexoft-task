@@ -24,6 +24,8 @@ const createUser = async (req, res) => {
 const loginUser = async (req, res) => {
   const { email, password } = req.body;
   const user = await User.findOne({ email });
+  // console.log(user);
+  
   if (!user) return res.status(401).json({ message: 'Invalid credentials' });
   if (!user.password) return res.status(401).json({ message: 'No password set for this user' });
   const isMatch = await bcrypt.compare(password, user.password);
