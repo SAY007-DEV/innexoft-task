@@ -36,9 +36,9 @@ function Header() {
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    // Replace with actual employee info (from auth or props)
-    const employeeName = "John Doe"; // Replace with real data
-    const employeeEmail = "john@example.com"; // Replace with real data
+    
+    const employeeName = "John Doe"; 
+    const employeeEmail = "john@gmail.com"; 
 
     const leave = {
       ...form,

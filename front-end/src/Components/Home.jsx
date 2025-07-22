@@ -8,7 +8,7 @@ function Home() {
       <h1>Welcome to the Portal</h1>
       <div style={{ display: 'flex', gap: '2rem' }}>
         <button onClick={() => navigate('/hr')} style={{ padding: '1rem 2rem', fontSize: '1.2rem', borderRadius: '8px', border: 'none', background: '#1976d2', color: 'white', cursor: 'pointer' }}>HR</button>
-        <button onClick={() => navigate('/employee/login')} style={{ padding: '1rem 2rem', fontSize: '1.2rem', borderRadius: '8px', border: 'none', background: '#388e3c', color: 'white', cursor: 'pointer' }}>Employee</button>
+        <button onClick={() => navigate('/login')} style={{ padding: '1rem 2rem', fontSize: '1.2rem', borderRadius: '8px', border: 'none', background: '#388e3c', color: 'white', cursor: 'pointer' }}>Employee</button>
       </div>
     </div>
   )

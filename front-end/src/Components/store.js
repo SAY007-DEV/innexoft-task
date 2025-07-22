@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 
-// Helper to load from localStorage or fallback
+
 const load = (key, fallback) => {
   try {
     const item = localStorage.getItem(key);
@@ -20,14 +20,14 @@ const useStore = create((set, get) => ({
   leaveBalance: load('leaveBalance', 10),
   currentUser: null,
 
-  // User actions
+  
   setCurrentUser: (user) => set(() => ({ currentUser: user })),
   clearCurrentUser: () => set(() => ({ currentUser: null })),
 
-  // Employee actions
+  
   addEmployee: (employee) => set((state) => ({ employees: [...state.employees, employee] })),
 
-  // Leave actions
+  
   addAppliedLeave: (leave) => {
     const newApplied = [...get().appliedLeaves, leave];
     const newPending = [...get().pendingLeaves, leave];
@@ -47,7 +47,7 @@ const useStore = create((set, get) => ({
   setEditId: (id) => set(() => ({ editId: id })),
   clearEditId: () => set(() => ({ editId: null })),
 
-  // Approve/Reject actions (for HR)
+  
   approveLeave: (id) => {
     const leave = get().pendingLeaves.find((l) => l.id === id);
     if (!leave) return;
@@ -90,7 +90,7 @@ const useStore = create((set, get) => ({
     });
   },
 
-  // Optionally, add more actions as needed
+  
 }));
 
 export default useStore; 
