@@ -18,6 +18,7 @@ function Header() {
     setEditId,
     clearEditId,
     deleteLeave,
+    currentUser // <-- add currentUser
   } = useStore();
 
   const approvedCount = approvedLeaves.length;
@@ -36,10 +37,8 @@ function Header() {
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    
-    const employeeName = "John Doe"; 
-    const employeeEmail = "john@gmail.com"; 
-
+    const employeeName = currentUser?.name || currentUser?.email || 'Unknown';
+    const employeeEmail = currentUser?.email || 'unknown@email.com';
     const leave = {
       ...form,
       status: 'pending',

@@ -14,7 +14,7 @@ function Header() {
   });
   const [editIndex, setEditIndex] = useState(null);
   const [editForm, setEditForm] = useState({ name: '', designation: '', email: '', phone: '', password: '' });
-  const [loading, setLoading] = useState(false); // <-- add loading state
+  const [loading, setLoading] = useState(false); 
 
   // Zustand state
   const {
@@ -25,11 +25,10 @@ function Header() {
     addEmployee,
     approveLeave,
     rejectLeave,
-    // addPendingLeave, // For demo/testing
-    // ...other actions
+   
   } = useStore();
 
-  // Derived counts
+  
   const employeeCount = employees.length;
   const leavePending = pendingLeaves.length;
   const leaveApproved = approvedLeaves.length;
@@ -47,7 +46,7 @@ function Header() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setLoading(true); // <-- set loading true
+    setLoading(true); 
     try {
       await axios.post('https://innexoft-task.onrender.com/api/employees', form);
       alert('Employee created successfully!');
@@ -58,7 +57,7 @@ function Header() {
       alert('Failed to create employee.');
       console.log(error);
     }
-    setLoading(false); // <-- set loading false
+    setLoading(false); 
   };
 
   const handleEdit = (index) => {
@@ -141,8 +140,8 @@ function Header() {
                         <td style={{ padding: '0.5rem', border: '1px solid #ccc' }}>
                           {
                             (() => {
-                              // Try to find the employee by email (or use employeeId if you have it)
-                              const emp = employees.find(e => e.email === leave.email /* or e.id === leave.employeeId */);
+                              
+                              const emp = employees.find(e => e.email === leave.email );
                               return emp ? emp.name : (leave.employeeName || leave.name || leave.email);
                             })()
                           }
